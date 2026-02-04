@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class PredictIn(BaseModel):
+    
     user_id: str
     merchant_id: str
     amount: float = Field(gt=0)
@@ -11,6 +12,8 @@ class PredictIn(BaseModel):
 
 
 class PredictOut(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     risk_score: float
     decision: str
     model_version: str
