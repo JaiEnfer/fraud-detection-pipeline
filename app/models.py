@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, Float, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -24,7 +24,7 @@ class TransactionEvent(Base):
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
         nullable=False,
     )
 
@@ -37,12 +37,12 @@ class FraudPrediction(Base):
 
     model_version: Mapped[str] = mapped_column(String(32), nullable=False)
     score: Mapped[float] = mapped_column(Float, nullable=False)  # 0..1 probability-like score
-    decision: Mapped[str] = mapped_column(String(16), nullable=False)  # "allow" | "review" | "block"
+    decision: Mapped[str] = mapped_column(String(16), nullable=False)  # allow/review/block 
 
     explanation: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
         nullable=False,
     )
