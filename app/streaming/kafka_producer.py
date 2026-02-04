@@ -7,7 +7,6 @@ from confluent_kafka import Producer
 
 from app.core.config import settings
 
-
 _producer: Producer | None = None
 
 
@@ -45,5 +44,3 @@ def send_transaction_event(event_id: str, payload: dict[str, Any]) -> None:
 
     if err_holder["err"] is not None:
         raise RuntimeError(f"Kafka delivery failed: {err_holder['err']}")
-
-

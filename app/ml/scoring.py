@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 def merchant_risk(merchant_id: str) -> int:
@@ -9,7 +9,7 @@ def merchant_risk(merchant_id: str) -> int:
 
 
 def hour_utc() -> int:
-    return datetime.now(timezone.utc).hour
+    return datetime.now(UTC).hour
 
 
 def anomaly_to_risk_score(anomaly_score: float) -> float:

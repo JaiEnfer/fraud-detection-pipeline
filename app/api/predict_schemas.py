@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PredictIn(BaseModel):
-    
     user_id: str
     merchant_id: str
     amount: float = Field(gt=0)

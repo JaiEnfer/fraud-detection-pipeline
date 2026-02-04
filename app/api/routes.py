@@ -25,7 +25,9 @@ def ingest_transaction(payload: TransactionIn, db: Session = Depends(get_db)) ->
     db.execute(
         text(
             """
-            INSERT INTO transaction_events (id, source, user_id, merchant_id, amount, currency, created_at)
+            INSERT INTO transaction_events (
+              id, source, user_id, merchant_id, amount, currency, created_at
+            )
             VALUES (:id, :source, :user_id, :merchant_id, :amount, :currency, now())
             ON CONFLICT (id) DO NOTHING
             """

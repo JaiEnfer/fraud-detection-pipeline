@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import joblib
@@ -26,19 +26,22 @@ def main() -> None:
     n = 50_000
 
     amounts = rng.lognormal(mean=3.2, sigma=0.55, size=n)  # mostly small/moderate
-    merchant_risk = rng.integers(0, 5, size=n)             # 0..4 (fake feature)
-    hour = rng.integers(0, 24, size=n)                     # 0..23
+    merchant_risk = rng.integers(0, 5, size=n)  # 0..4 (fake feature)
+    hour = rng.integers(0, 24, size=n)  # 0..23
 
     X = np.column_stack([amounts, merchant_risk, hour])
 
     pipe: Pipeline = Pipeline(
         steps=[
             ("scaler", StandardScaler()),
-            ("model", IsolationForest(
-                n_estimators=200,
-                contamination=0.01,
-                random_state=42,
-            )),
+            (
+                "model",
+                IsolationForest(
+                    n_estimators=200,
+                    contamination=0.01,
+                    random_state=42,
+                ),
+            ),
         ]
     )
 
@@ -48,7 +51,7 @@ def main() -> None:
     meta = ModelMeta(
         model_name="isolation_forest_baseline",
         model_version=model_version,
-        trained_at_utc=datetime.now(timezone.utc).isoformat(),
+        trained_at_utc=datetime.now(UTC).isoformat(),
         features=["amount", "merchant_risk", "hour"],
     )
 

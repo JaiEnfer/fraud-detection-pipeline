@@ -4,11 +4,11 @@ import time
 from collections.abc import Generator
 
 import pytest
-from alembic import command
-from alembic.config import Config
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
+from alembic import command
+from alembic.config import Config
 from app.core.db import engine
 
 
@@ -41,7 +41,9 @@ def _wait_for_db(timeout_seconds: int = 30) -> None:
 
 
 @pytest.fixture(autouse=True)
-def db_bootstrap_for_integration_tests(request: pytest.FixtureRequest) -> Generator[None, None, None]:
+def db_bootstrap_for_integration_tests(
+    request: pytest.FixtureRequest,
+) -> Generator[None, None, None]:
     if not _is_integration_test(request):
         yield
         return

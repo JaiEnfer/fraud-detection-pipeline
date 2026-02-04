@@ -1,3 +1,4 @@
+# worker/consumer.py
 from __future__ import annotations
 
 import json
@@ -5,7 +6,7 @@ import math
 import os
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -35,26 +36,17 @@ def load_model() -> LoadedModel:
 
 
 def _merchant_risk(merchant_id: str) -> int:
-    """
-    Placeholder feature engineering.
-    Replace with a lookup table / feature store later.
-    """
     # Deterministic small hash → 0..4
     return sum(merchant_id.encode("utf-8")) % 5
 
 
 def _hour_utc() -> int:
-    return datetime.now(timezone.utc).hour
+    return datetime.now(UTC).hour
 
 
 def anomaly_to_risk_score(anomaly_score: float) -> float:
-    """
-    IsolationForest's score_samples: higher = more normal.
-    Convert to a 0..1 "risk" score where higher = more suspicious.
-
-    We use a squashed transform so it's stable.
-    """
-    # invert and squash
+    # IsolationForest score_samples: higher = more normal.
+    # Convert to 0..1 "risk" where higher = more suspicious.
     x = -anomaly_score
     return 1.0 / (1.0 + math.exp(-x))
 
@@ -72,7 +64,9 @@ def upsert_prediction(
     db.execute(
         text(
             """
-            INSERT INTO fraud_predictions (id, event_id, model_version, score, decision, explanation, created_at)
+            INSERT INTO fraud_predictions (
+              id, event_id, model_version, score, decision, explanation, created_at
+            )
             VALUES (:id, :event_id, :model_version, :score, :decision, :explanation, :created_at)
             ON CONFLICT (id) DO UPDATE SET
               score = EXCLUDED.score,
@@ -89,7 +83,7 @@ def upsert_prediction(
             "score": score,
             "decision": decision,
             "explanation": explanation,
-            "created_at": datetime.now(timezone.utc),
+            "created_at": datetime.now(UTC),
         },
     )
     db.commit()
@@ -126,10 +120,7 @@ def run() -> None:
             merchant_id = str(event["merchant_id"])
             amount = float(event["amount"])
 
-            # Feature engineering
             X = [[amount, _merchant_risk(merchant_id), _hour_utc()]]
-
-            # IsolationForest pipeline: score_samples (higher = more normal)
             anomaly_score = float(model.pipeline.score_samples(X)[0])
             risk = anomaly_to_risk_score(anomaly_score)
 
