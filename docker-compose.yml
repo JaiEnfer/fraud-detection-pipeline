@@ -1,0 +1,89 @@
+﻿services:
+  db:
+    image: postgres:16
+    container_name: fraud-db
+    environment:
+      POSTGRES_USER: fraud
+      POSTGRES_PASSWORD: fraud
+      POSTGRES_DB: fraud
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fraud -d fraud"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  kafka:
+    image: redpandadata/redpanda:v24.1.10
+    container_name: fraud-kafka
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp
+      - "1"
+      - --memory
+      - "1G"
+      - --reserve-memory
+      - "0M"
+      - --node-id
+      - "0"
+      - --check=false
+      - --kafka-addr
+      - INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:19092
+      - --advertise-kafka-addr
+      - INTERNAL://kafka:9092,EXTERNAL://localhost:19092
+    ports:
+      - "9092:9092"
+      - "19092:19092"
+    volumes:
+      - redpandadata:/var/lib/redpanda/data
+
+  console:
+    image: redpandadata/console:v2.6.1
+    container_name: fraud-console
+    environment:
+      KAFKA_BROKERS: kafka:9092
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: fraud-api
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    command: 
+      ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "debug"]
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    volumes:
+      - ./models:/app/models:ro
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: fraud-worker
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+volumes:
+  pgdata:
+  redpandadata:
